@@ -43,10 +43,15 @@ export class StoresService {
   async create(userId: string, name: string, icon: string) {
     const familyId = await this.profiles.getFamilyId(userId);
     const db = this.supabase.getClient();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      throw new BadRequestException('El nombre es requerido');
+    }
 
     const { data, error } = await db
       .from('stores')
-      .insert({ name: name.trim(), icon, family_id: familyId })
+      .insert({ name: trimmedName, icon, family_id: familyId })
       .select()
       .single();
 
@@ -57,7 +62,11 @@ export class StoresService {
     return data;
   }
 
-  async update(userId: string, storeId: string, updates: { name?: string; icon?: string }) {
+  async update(
+    userId: string,
+    storeId: string,
+    updates: { name?: string; icon?: string },
+  ) {
     const familyId = await this.profiles.getFamilyId(userId);
     await this.verifyOwnership(storeId, familyId);
 
@@ -96,9 +105,45 @@ export class StoresService {
 
   async createDefaultStores(familyId: string) {
     const db = this.supabase.getClient();
-    const stores = DEFAULT_STORES.map((store) => ({ ...store, family_id: familyId }));
+    const stores = DEFAULT_STORES.map((store) => ({
+      ...store,
+      family_id: familyId,
+    }));
 
-    await db.from('stores').insert(stores);
+    const { error } = await db.from('stores').insert(stores);
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  async ensureStoresBelongToFamily(familyId: string, storeIds: string[]) {
+    const uniqueStoreIds = [...new Set(storeIds)];
+
+    if (uniqueStoreIds.length === 0) {
+      return;
+    }
+
+    const db = this.supabase.getClient();
+    const { data, error } = await db
+      .from('stores')
+      .select('id, family_id')
+      .in('id', uniqueStoreIds);
+
+    if (error) {
+      throw new BadRequestException(error.message);
+    }
+
+    if (!data || data.length !== uniqueStoreIds.length) {
+      throw new BadRequestException('Una o más tiendas no existen');
+    }
+
+    const invalidStore = data.find((store) => store.family_id !== familyId);
+    if (invalidStore) {
+      throw new ForbiddenException(
+        'Una o más tiendas no pertenecen a tu familia',
+      );
+    }
   }
 
   private async verifyOwnership(storeId: string, familyId: string) {

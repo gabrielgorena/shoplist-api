@@ -10,7 +10,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  AuthUser,
+} from '../common/decorators/current-user.decorator.js';
 import { ItemsService } from './items.service.js';
 import { CreateItemDto } from './dto/create-item.dto.js';
 import { UpdateItemDto } from './dto/update-item.dto.js';

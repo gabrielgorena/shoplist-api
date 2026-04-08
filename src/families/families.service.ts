@@ -16,11 +16,17 @@ export class FamiliesService {
   ) {}
 
   async createFamily(userId: string, name: string) {
+    await this.ensureUserHasNoFamily(userId);
     const db = this.supabase.getClient();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      throw new BadRequestException('El nombre es requerido');
+    }
 
     const { data: family, error } = await db
       .from('families')
-      .insert({ name: name.trim(), created_by: userId })
+      .insert({ name: trimmedName, created_by: userId })
       .select()
       .single();
 
@@ -28,16 +34,19 @@ export class FamiliesService {
       throw new BadRequestException(error.message);
     }
 
-    // Assign user to the new family
-    await this.profiles.updateProfile(userId, { family_id: family.id });
-
-    // Create default stores for this family
-    await this.stores.createDefaultStores(family.id);
+    try {
+      await this.profiles.updateProfile(userId, { family_id: family.id });
+      await this.stores.createDefaultStores(family.id);
+    } catch (cause) {
+      await db.from('families').delete().eq('id', family.id);
+      throw cause;
+    }
 
     return family;
   }
 
   async joinFamily(userId: string, code: string) {
+    await this.ensureUserHasNoFamily(userId);
     const db = this.supabase.getClient();
 
     const { data: family, error } = await db
@@ -87,5 +96,13 @@ export class FamiliesService {
     }
 
     return members;
+  }
+
+  private async ensureUserHasNoFamily(userId: string) {
+    const profile = await this.profiles.getProfile(userId);
+
+    if (profile.family_id) {
+      throw new BadRequestException('Ya perteneces a una familia');
+    }
   }
 }

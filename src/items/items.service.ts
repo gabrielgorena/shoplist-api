@@ -1,7 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { ProfilesService } from '../profiles/profiles.service.js';
 import { Priority } from './dto/create-item.dto.js';
+import { StoresService } from '../stores/stores.service.js';
 
 interface QueryOptions {
   storeId?: string;
@@ -14,6 +20,7 @@ export class ItemsService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly profiles: ProfilesService,
+    private readonly stores: StoresService,
   ) {}
 
   async findAll(userId: string, options: QueryOptions) {
@@ -22,12 +29,14 @@ export class ItemsService {
 
     let query = db
       .from('items')
-      .select(`
+      .select(
+        `
         *,
         item_stores(store_id, stores:stores(id, name, icon)),
         profiles:created_by(name),
         bought_by_profile:bought_by(name)
-      `)
+      `,
+      )
       .eq('family_id', familyId)
       .order('is_bought', { ascending: true })
       .order('priority', { ascending: true })
@@ -71,14 +80,23 @@ export class ItemsService {
   ) {
     const familyId = await this.profiles.getFamilyId(userId);
     const db = this.supabase.getClient();
+    const trimmedName = data.name.trim();
+
+    if (!trimmedName) {
+      throw new BadRequestException('El nombre es requerido');
+    }
+
+    if (data.store_ids?.length) {
+      await this.stores.ensureStoresBelongToFamily(familyId, data.store_ids);
+    }
 
     const { data: item, error } = await db
       .from('items')
       .insert({
-        name: data.name.trim(),
+        name: trimmedName,
         quantity: data.quantity ?? 1,
-        unit: data.unit ?? null,
-        notes: data.notes ?? null,
+        unit: data.unit?.trim() || null,
+        notes: data.notes?.trim() || null,
         priority: data.priority ?? 'medium',
         family_id: familyId,
         created_by: userId,
@@ -96,7 +114,9 @@ export class ItemsService {
         store_id,
       }));
 
-      const { error: storeError } = await db.from('item_stores').insert(itemStores);
+      const { error: storeError } = await db
+        .from('item_stores')
+        .insert(itemStores);
 
       if (storeError) {
         throw new BadRequestException(storeError.message);
@@ -125,15 +145,31 @@ export class ItemsService {
     const db = this.supabase.getClient();
     const { store_ids, ...itemUpdates } = data;
 
-    // Handle bought_by when toggling is_bought
     const updates: Record<string, unknown> = { ...itemUpdates };
+    if (typeof updates.name === 'string') {
+      const trimmedName = updates.name.trim();
+
+      if (!trimmedName) {
+        throw new BadRequestException('El nombre es requerido');
+      }
+
+      updates.name = trimmedName;
+    }
+
+    if (typeof updates.unit === 'string') {
+      updates.unit = updates.unit.trim() || null;
+    }
+
+    if (typeof updates.notes === 'string') {
+      updates.notes = updates.notes.trim() || null;
+    }
+
     if (updates.is_bought === true) {
       updates.bought_by = userId;
     } else if (updates.is_bought === false) {
       updates.bought_by = null;
     }
 
-    // Clean undefined values
     Object.keys(updates).forEach((key) => {
       if (updates[key] === undefined) delete updates[key];
     });
@@ -149,14 +185,26 @@ export class ItemsService {
       throw new BadRequestException(error.message);
     }
 
-    // Update store associations if provided
     if (store_ids !== undefined) {
-      await db.from('item_stores').delete().eq('item_id', itemId);
+      await this.stores.ensureStoresBelongToFamily(familyId, store_ids);
+
+      const { error: deleteError } = await db
+        .from('item_stores')
+        .delete()
+        .eq('item_id', itemId);
+
+      if (deleteError) {
+        throw new BadRequestException(deleteError.message);
+      }
 
       if (store_ids.length > 0) {
-        await db.from('item_stores').insert(
-          store_ids.map((store_id) => ({ item_id: itemId, store_id })),
-        );
+        const { error: insertError } = await db
+          .from('item_stores')
+          .insert(store_ids.map((store_id) => ({ item_id: itemId, store_id })));
+
+        if (insertError) {
+          throw new BadRequestException(insertError.message);
+        }
       }
     }
 

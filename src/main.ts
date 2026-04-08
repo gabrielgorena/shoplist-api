@@ -29,4 +29,4 @@ async function bootstrap() {
   console.log(`ShopList API running on http://localhost:${port}`);
 }
 
-bootstrap();
+void bootstrap();

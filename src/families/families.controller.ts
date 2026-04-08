@@ -1,6 +1,9 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../common/guards/auth.guard.js';
-import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator.js';
+import {
+  CurrentUser,
+  AuthUser,
+} from '../common/decorators/current-user.decorator.js';
 import { FamiliesService } from './families.service.js';
 import { CreateFamilyDto } from './dto/create-family.dto.js';
 import { JoinFamilyDto } from './dto/join-family.dto.js';
