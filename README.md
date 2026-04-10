@@ -1,98 +1,172 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ShopList API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend de ShopList construido con NestJS y Supabase.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- NestJS 11
+- TypeScript
+- Supabase JS client
+- class-validator / class-transformer
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requisitos
 
-## Project setup
+- Node.js 20 o superior
+- npm
+- Un proyecto de Supabase
+
+## Variables de entorno
+
+Crear un archivo `.env` en la raiz de este proyecto.
+
+Puedes copiar la base desde `.env.example`:
 
 ```bash
-$ npm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+Variables requeridas:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+FRONTEND_URL=http://localhost:3000
+PORT=3001
+```
+
+### Que significa cada variable
+
+- `SUPABASE_URL`: URL del proyecto de Supabase.
+- `SUPABASE_SERVICE_ROLE_KEY`: service role key de Supabase. La usa el backend para validar auth y operar con privilegios de servidor.
+- `FRONTEND_URL`: origen permitido para CORS.
+- `PORT`: puerto donde escucha la API.
+
+## Levantar local
+
+Instalar dependencias:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+Ejecutar en desarrollo:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run start:dev
 ```
 
-## Deployment
+La API queda disponible en:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```text
+http://localhost:3001
+```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Healthcheck:
+
+```text
+http://localhost:3001/health
+```
+
+## Scripts utiles
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
+npm run build
+npm run start:prod
+npm run lint
+npm test -- --runInBand
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Nota:
 
-## Resources
+- El repo hoy no tiene tests utiles implementados.
+- `npm test -- --runInBand` puede no encontrar tests si no agregas specs reales.
 
-Check out a few resources that may come in handy when working with NestJS:
+## Arquitectura rapida
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+La API esta separada por dominios:
 
-## Support
+- `src/families`
+- `src/items`
+- `src/stores`
+- `src/profiles`
+- `src/auth`
+- `src/supabase`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Patron principal:
 
-## Stay in touch
+- `controller`: recibe HTTP
+- `service`: aplica logica de negocio y acceso a datos
+- `dto`: valida payloads de entrada
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Flujo local completo
 
-## License
+Para usar la app completa localmente:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+1. Levantar esta API en `http://localhost:3001`
+2. Configurar el frontend `shoplist` con `NEXT_PUBLIC_API_URL=http://localhost:3001`
+3. Levantar el frontend en `http://localhost:3000`
+
+## Build y runtime en produccion
+
+El backend esta preparado para:
+
+- compilar con `npm run build`
+- arrancar con `node dist/main.js`
+- escuchar en `0.0.0.0` usando `PORT`
+
+Eso es importante para providers como Render.
+
+## Deploy a produccion
+
+Produccion actual:
+
+- Hosting: Render
+- URL publica: `https://shoplist-api.onrender.com`
+
+### Como se despliega hoy
+
+Este servicio esta conectado al repo de GitHub, pero el deploy se esta haciendo manualmente desde Render.
+
+Pasos:
+
+1. Hacer push a `main`
+2. Ir al servicio `shoplist-api` en Render
+3. Elegir `Manual Deploy`
+4. Elegir `Deploy latest commit`
+
+### Variables requeridas en Render
+
+Configurar estas variables en el dashboard del servicio:
+
+```env
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+FRONTEND_URL=https://shoplist-red.vercel.app
+PORT=10000
+```
+
+Nota:
+
+- Render puede inyectar su propio `PORT`. La aplicacion ya esta preparada para usarlo.
+- Si defines `PORT` manualmente, asegurate de que coincida con lo esperado por Render o simplemente deja que Render lo maneje.
+
+### Build y start command esperados en Render
+
+Build command:
+
+```bash
+npm install && npm run build
+```
+
+Start command:
+
+```bash
+node dist/main.js
+```
+
+## Notas importantes
+
+- `.env` local no debe subirse al repo.
+- `.env.example` es solo documentacion.
+- Si local y produccion usan el mismo proyecto de Supabase, ambos comparten la misma base de datos.
